@@ -65,7 +65,7 @@
   }
   .input-wrapper input {
     width: 100%;
-    padding: 10px 12px;
+    padding: 10px 40px 10px 12px; /* Добавили отступ справа для символа */
     border-radius: 10px;
     border: 1px solid #e6e2dc;
     background: transparent;
@@ -88,6 +88,8 @@
     font-weight: 700;
     color: #111;
     pointer-events: none;
+    background: white;
+    padding-left: 4px;
   }
 
   /* responsive */
@@ -127,12 +129,12 @@
         <!-- Ваш курс и Клиентский курс — на одной строке -->
         <div>
           <label id="lbl-your-rate">Ваш курс</label>
-          <input id="myRate" inputmode="decimal" placeholder="11.2" />
+          <input id="myRate" inputmode="decimal" placeholder="" />
         </div>
 
         <div>
           <label id="lbl-client-rate">Клиентский курс</label>
-          <input id="clientRate" inputmode="decimal" placeholder="11.9" />
+          <input id="clientRate" inputmode="decimal" placeholder="" />
         </div>
       </div>
 
@@ -305,8 +307,8 @@ function computeAll(){
 
   // проверка курсов
   if (!isFinite(myRate) || !isFinite(clientRate) || myRate <= 0 || clientRate <= 0){
-    clientGetEl.value = '';
-    clientGiveEl.value = '';
+    if (lastEdited !== 'clientGive') clientGiveEl.value = '';
+    if (lastEdited !== 'clientGet') clientGetEl.value = '';
     profitRubEl.textContent = '—';
     profitCnyEl.textContent = '—';
     detailLine.textContent = currentLang === 'ru' ? 'Введите корректные курсы' : '请输入正确的汇率';
