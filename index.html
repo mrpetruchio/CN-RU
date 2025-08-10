@@ -98,6 +98,24 @@
     .card{width:100%}
     .controls{grid-template-columns:1fr}
   }
+  
+  /* Добавленные стили для мобильных устройств */
+  @media (max-width: 600px) {
+    .input-wrapper input {
+      font-size: 16px;
+      padding: 8px 36px 8px 10px;
+    }
+    .currency-symbol {
+      font-size: 16px;
+      right: 10px;
+    }
+    body {
+      padding: 20px;
+    }
+    .card {
+      padding: 20px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -186,9 +204,16 @@ function cleanNum(s){
   const n = Number(s);
   return isFinite(n) ? n : NaN;
 }
-function fmt(n,dec=2){
+function fmt(n, dec=2, forceDecimals=false){
   if (!isFinite(n)) return '—';
-  return n.toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  // Для направления 元⇒₽ и целых чисел не показываем .00
+  if (direction === 'cny2rub' && dec === 2 && Number.isInteger(n) && !forceDecimals) {
+    return n.toLocaleString(undefined, {maximumFractionDigits: 0});
+  }
+  return n.toLocaleString(undefined, {
+    minimumFractionDigits: forceDecimals ? dec : 0,
+    maximumFractionDigits: dec
+  });
 }
 function escHTML(str){
   if (str === null || str === undefined) return '';
