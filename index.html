@@ -1,278 +1,484 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Калькулятор обмена валют</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Калькулятор обмена</title>
 <style>
-    body {
-        font-family: "Segoe UI", Arial, sans-serif;
-        background-color: #e9ecef;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        min-height: 100vh;
-    }
-    .container {
-        background: #ffffff;
-        max-width: 420px;
-        width: 100%;
-        margin-top: 40px;
-        padding: 30px;
-        border-radius: 14px;
-        box-shadow: 0 6px 30px rgba(0,0,0,0.1);
-    }
-    .header {
-        text-align: center;
-        font-size: 22px;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 8px;
-    }
-    .language-switch {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        margin-bottom: 20px;
-    }
-    .flag-btn {
-        border: none;
-        background: none;
-        cursor: pointer;
-        font-size: 26px;
-        transition: transform 0.2s;
-    }
-    .flag-btn:hover {
-        transform: scale(1.15);
-    }
-    label {
-        font-weight: 500;
-        display: block;
-        margin-top: 15px;
-        margin-bottom: 6px;
-        color: #444;
-    }
-    input, select, button {
-        width: 100%;
-        padding: 10px 12px;
-        font-size: 15px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        box-sizing: border-box;
-        transition: border-color 0.3s, box-shadow 0.3s;
-    }
-    input:focus, select:focus {
-        border-color: #a27b5c;
-        outline: none;
-        box-shadow: 0 0 6px rgba(162, 123, 92, 0.4);
-    }
-    button {
-        background-color: #a27b5c;
-        color: white;
-        font-weight: 500;
-        cursor: pointer;
-        margin-top: 20px;
-        border: none;
-        transition: background-color 0.3s;
-    }
-    button:hover {
-        background-color: #8f6a50;
-    }
-    .result {
-        margin-top: 25px;
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        font-size: 15px;
-        color: #333;
-    }
-    .checkbox-container {
-        display: flex;
-        align-items: center;
-        margin-top: 15px;
-    }
-    .checkbox-container input {
-        width: auto;
-        margin-right: 10px;
-    }
-    .checkbox-label {
-        margin: 0;
-    }
+  :root{
+    --bg1:#efeae3;
+    --card:#ffffff;
+    --muted:#6b6f74;
+    --accent:#b88646; /* мягкое золото */
+    --accent-strong:#9a6f3a;
+    --shadow: 0 8px 30px rgba(19,18,17,0.08);
+    --green:#2f8f6e;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family: Inter, "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg,var(--bg1), #f6f3ee);
+    -webkit-font-smoothing:antialiased; color:#1b1b1b;
+    display:flex; align-items:flex-start; justify-content:center; padding:36px;
+    min-height:100vh;
+  }
+
+  .wrap{width:100%;max-width:980px;display:flex;gap:28px;align-items:flex-start}
+  .card{
+    background:var(--card); border-radius:14px; padding:26px; box-shadow:var(--shadow); flex:0 0 520px;
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .card:hover{transform:translateY(-4px)}
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+  .title-block{flex:1}
+  h1{margin:0;font-size:20px;letter-spacing:0.2px;font-weight:600;color:#222}
+  .subtitle{margin:6px 0 0;color:var(--muted);font-size:13px}
+  .lang-row{display:flex;align-items:center;gap:8px}
+  .flag-btn{border:0;background:transparent;padding:6px;border-radius:8px;font-size:20px;cursor:pointer;transition:transform .15s, box-shadow .15s}
+  .flag-btn:hover{transform:translateY(-3px); box-shadow:0 6px 18px rgba(154,111,58,0.12)}
+  .flag-btn.active{box-shadow:inset 0 -2px 0 rgba(154,111,58,0.12); border-radius:8px}
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  select,input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #e6e2dc;background:transparent;font-size:15px;color:#111}
+  select:focus,input:focus{outline:none;box-shadow:0 6px 18px rgba(154,111,58,0.08);border-color:rgba(154,111,58,0.18)}
+  .full{grid-column:1 / -1}
+  .direction{display:flex;gap:8px;align-items:center}
+  .pill{padding:8px 12px;border-radius:999px;border:1px solid #eee;background:linear-gradient(180deg,#fff,#fbfaf8);cursor:pointer;font-weight:600;color:#333}
+  .pill.active{background:linear-gradient(180deg,#fff8f1,#fff2e6);border:1px solid rgba(154,111,58,0.18);box-shadow:0 6px 18px rgba(154,111,58,0.06)}
+  .result-card{margin-top:18px;background:linear-gradient(180deg,#fff,#fff);border-radius:12px;padding:16px;border:1px solid #f0ebe6}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:10px 4px}
+  .label{color:var(--muted);font-size:13px}
+  .value{font-size:18px;font-weight:700;color:#111}
+  .value.editable{cursor:text;padding:6px 10px;border-radius:8px;min-width:140px;text-align:right}
+  .value.editable:focus{outline:none;box-shadow:0 6px 18px rgba(154,111,58,0.06)}
+  .small{font-size:12px;color:var(--muted);margin-top:6px}
+  .note{font-size:12px;color:var(--muted);margin-top:8px}
+  .muted-block{font-size:13px;color:var(--muted);margin-top:8px}
+  .right-col{flex:1}
+  .hint{font-size:12px;color:#8b8f94}
+  .footer{margin-top:14px;font-size:12px;color:var(--muted);text-align:center}
+
+  /* number animation */
+  .num-wrap{display:inline-block;overflow:hidden;height:28px}
+  .num{display:inline-block;transform:translateY(0);transition:transform .22s cubic-bezier(.2,.9,.2,1),opacity .18s}
+  .num-out{transform:translateY(6px);opacity:0}
+
+  /* responsive */
+  @media (max-width:860px){
+    .wrap{flex-direction:column;align-items:stretch}
+    .card{flex:unset}
+  }
 </style>
 </head>
 <body>
+  <div class="wrap">
+    <div class="card" role="application" aria-label="Currency calculator">
+      <header>
+        <div class="title-block">
+          <h1 id="title">Калькулятор обмена</h1>
+          <div class="subtitle" id="subtitle">Быстрый и точный расчёт прибыли</div>
+        </div>
 
-<div class="container">
-    <div class="header" id="title">Калькулятор обмена</div>
-    
-    <div class="language-switch">
-        <button class="flag-btn" onclick="setLanguage('ru')">🇷🇺</button>
-        <button class="flag-btn" onclick="setLanguage('cn')">🇨🇳</button>
+        <div class="lang-row" aria-hidden="false">
+          <div style="text-align:right">
+            <button class="flag-btn active" id="flag-ru" title="Русский (RU)">🇷🇺</button>
+            <button class="flag-btn" id="flag-cn" title="中文 (CN)">🇨🇳</button>
+          </div>
+        </div>
+      </header>
+
+      <div style="margin-top:8px" class="hint" id="hint-line">Например: 11.3 или 0.0884 — поддерживается оба формата</div>
+
+      <div class="controls" style="margin-top:14px">
+        <div>
+          <label id="lbl-direction">Направление</label>
+          <div class="direction" role="radiogroup" aria-labelledby="lbl-direction">
+            <button class="pill active" id="dir-rub2cny" data-dir="rub2cny">К => 元</button>
+            <button class="pill" id="dir-cny2rub" data-dir="cny2rub">元 => K</button>
+          </div>
+        </div>
+
+        <div>
+          <label id="lbl-your-rate">Ваш курс</label>
+          <input id="myRate" inputmode="decimal" placeholder="11.3" />
+        </div>
+
+        <div>
+          <label id="lbl-client-rate">Клиентский курс</label>
+          <input id="clientRate" inputmode="decimal" placeholder="11.8" />
+        </div>
+
+        <div>
+          <label id="lbl-amount">Введите сумму</label>
+          <input id="amount" inputmode="decimal" placeholder="500000" />
+        </div>
+
+        <div class="full">
+          <div class="muted-block">Подсказка: ввод чисел с запятой или точкой и с пробелами поддерживается</div>
+        </div>
+      </div>
+
+      <div class="result-card" id="results">
+        <div class="row" style="align-items:flex-start">
+          <div>
+            <div class="label" id="lab-client-get">Клиент получит</div>
+            <div tabindex="0" contenteditable="true" id="clientGet" class="value editable" role="textbox" aria-label="Клиент получит">—</div>
+          </div>
+          <div style="text-align:right">
+            <div class="label" id="lab-client-give-label">Клиент отдаст</div>
+            <div tabindex="0" contenteditable="true" id="clientGive" class="value editable" role="textbox" aria-label="Клиент отдаст">—</div>
+          </div>
+        </div>
+
+        <div class="row" style="border-top:1px dashed #f0ebe6;margin-top:8px;padding-top:12px">
+          <div>
+            <div class="label">Ваша прибыль (₽)</div>
+            <div class="value" id="profitRub">—</div>
+          </div>
+          <div style="text-align:right">
+            <div class="label">Ваша прибыль (元)</div>
+            <div class="value" id="profitCny">—</div>
+          </div>
+        </div>
+
+        <div class="note" id="detailLine">—</div>
+      </div>
+
+      <div class="footer">Формат курсов: >1 — руб/юань, &lt;1 — юань/рубль (поддерживается автоматически)</div>
     </div>
-
-    <label id="question1">Что хочет обменять клиент?</label>
-    <select id="choice">
-        <option value="1">Отдать рубли, получить юани</option>
-        <option value="2">Отдать юани, получить рубли</option>
-    </select>
-
-    <div class="checkbox-container">
-        <input type="checkbox" id="reverseMode">
-        <label class="checkbox-label" id="reverseLabel">Рассчитать от суммы, которую получит клиент</label>
-    </div>
-
-    <label id="yourRateLabel">Ваш курс:</label>
-    <input type="text" id="yourRate">
-
-    <label id="clientRateLabel">Клиентский курс:</label>
-    <input type="text" id="clientRate">
-
-    <label id="amountLabel">Введите сумму:</label>
-    <input type="text" id="amount">
-
-    <button id="calculateBtn">Рассчитать</button>
-
-    <div id="result" class="result" style="display:none;"></div>
-</div>
+  </div>
 
 <script>
-    const langData = {
-        ru: {
-            title: "Калькулятор обмена",
-            question1: "Что хочет обменять клиент?",
-            option1: "Отдать рубли, получить юани",
-            option2: "Отдать юани, получить рубли",
-            reverseLabel: "Рассчитать от суммы, которую получит клиент",
-            yourRate: "Ваш курс:",
-            clientRate: "Клиентский курс:",
-            amount: "Введите сумму:",
-            calculateBtn: "Рассчитать",
-            result: "Результаты:",
-            clientGets: "Клиент получит",
-            clientGives: "Клиент отдаст",
-            yourProfit: "Ваша прибыль",
-            rub: "₽",
-            cny: "元"
-        },
-        cn: {
-            title: "兑换计算器",
-            question1: "客户想兑换什么？",
-            option1: "用卢布换人民币",
-            option2: "用人民币换卢布",
-            reverseLabel: "从客户获得的金额计算",
-            yourRate: "您的汇率:",
-            clientRate: "客户汇率:",
-            amount: "请输入金额:",
-            calculateBtn: "计算",
-            result: "结果:",
-            clientGets: "客户得到",
-            clientGives: "客户支付",
-            yourProfit: "你的利润",
-            rub: "₽",
-            cny: "元"
-        }
-    };
+/* ====== Утилиты ====== */
+function cleanNum(s){
+  if (s === null || s === undefined) return NaN;
+  s = String(s).trim();
+  if (s === "") return NaN;
+  // убрать пробелы, не цифры кроме .,,- 
+  s = s.replace(/\s+/g,'').replace(/,/g,'.').replace(/[^\d.\-]/g,'');
+  const n = Number(s);
+  return isFinite(n) ? n : NaN;
+}
+function fmt(n,dec=2){
+  if (!isFinite(n)) return '—';
+  // локаль-agnostic formatting with grouping
+  return n.toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
 
-    let currentLang = "ru";
+/* ====== Элементы ====== */
+const el = id => document.getElementById(id);
+const myRateEl = el('myRate');
+const clientRateEl = el('clientRate');
+const amountEl = el('amount');
+const dirRubBtn = el('dir-rub2cny');
+const dirCnyBtn = el('dir-cny2rub');
+const clientGetEl = el('clientGet');
+const clientGiveEl = el('clientGive');
+const profitRubEl = el('profitRub');
+const profitCnyEl = el('profitCny');
+const detailLine = el('detailLine');
+const flagRu = el('flag-ru');
+const flagCn = el('flag-cn');
+const titleEl = el('title');
+const subtitleEl = el('subtitle');
+const lblYourRate = el('lbl-your-rate');
+const lblClientRate = el('lbl-client-rate');
+const lblAmount = el('lbl-amount');
+const labClientGet = el('lab-client-get');
+const labClientGive = el('lab-client-give-label');
+const hintLine = el('hint-line');
 
-    function setLanguage(lang) {
-        currentLang = lang;
-        document.getElementById("title").textContent = langData[lang].title;
-        document.getElementById("question1").textContent = langData[lang].question1;
-        document.getElementById("choice").options[0].text = langData[lang].option1;
-        document.getElementById("choice").options[1].text = langData[lang].option2;
-        document.getElementById("reverseLabel").textContent = langData[lang].reverseLabel;
-        document.getElementById("yourRateLabel").textContent = langData[lang].yourRate;
-        document.getElementById("clientRateLabel").textContent = langData[lang].clientRate;
-        document.getElementById("amountLabel").textContent = langData[lang].amount;
-        document.getElementById("calculateBtn").textContent = langData[lang].calculateBtn;
+/* ====== Переменные состояния ====== */
+let direction = 'rub2cny'; // руб -> юань (client gives rub)
+let currentLang = 'ru';
+let lastEdited = null; // 'amount' | 'clientGet' | 'clientGive' | 'myRate' | 'clientRate'
+let debounceTimer = null;
+let animTimer = null;
+
+/* ====== Локализация (сокращённые подписи) ====== */
+const L = {
+  ru: {
+    title:'Калькулятор обмена',
+    subtitle:'Быстрый и точный расчёт прибыли',
+    hint:'Например: 11.3 или 0.0884 — поддерживается оба формата',
+    yourRate:'Ваш курс',
+    clientRate:'Клиентский курс',
+    amount:'Введите сумму',
+    clientGet:'Клиент получит',
+    clientGive:'Клиент отдаст',
+    profitRub:'Ваша прибыль (₽)',
+    profitCny:'Ваша прибыль (元)',
+    detailsRub:`Клиент получает по клиентскому курсу; вы обмениваете по вашему курсу.`,
+    detailsCny:`Вы получаете по вашему курсу; клиент получает по клиентскому курсу.`
+  },
+  cn: {
+    title:'兑换计算器',
+    subtitle:'快速且准确的利润计算',
+    hint:'例如: 11.3 或 0.0884 — 两种格式都支持',
+    yourRate:'您的汇率',
+    clientRate:'客户汇率',
+    amount:'请输入金额',
+    clientGet:'客户得到',
+    clientGive:'客户给出',
+    profitRub:'您的利润 (₽)',
+    profitCny:'您的利润 (元)',
+    detailsRub:`客户按客户汇率收到；您按您的汇率兑换。`,
+    detailsCny:`您按您的汇率得到；客户按客户汇率收到。`
+  }
+};
+
+/* ====== UI: локализация функции ====== */
+function applyLang(lang){
+  currentLang = lang;
+  const t = L[lang];
+  titleEl.textContent = t.title;
+  subtitleEl.textContent = t.subtitle;
+  hintLine.textContent = t.hint;
+  lblYourRate.textContent = t.yourRate;
+  lblClientRate.textContent = t.clientRate;
+  lblAmount.textContent = t.amount;
+  labClientGet.textContent = t.clientGet;
+  labClientGive.textContent = t.clientGive;
+  // active flag visuals
+  flagRu.classList.toggle('active', lang==='ru');
+  flagCn.classList.toggle('active', lang==='cn');
+}
+flagRu.addEventListener('click', ()=> applyLang('ru'));
+flagCn.addEventListener('click', ()=> applyLang('cn'));
+applyLang('ru');
+
+/* ====== Direction toggles ====== */
+function setDirection(dir){
+  direction = dir;
+  dirRubBtn.classList.toggle('active', dir==='rub2cny');
+  dirCnyBtn.classList.toggle('active', dir==='cny2rub');
+  scheduleRecalc('direction');
+}
+dirRubBtn.addEventListener('click', ()=> setDirection('rub2cny'));
+dirCnyBtn.addEventListener('click', ()=> setDirection('cny2rub'));
+
+/* ====== Convert rate: accept both formats ====== */
+function toRubPerCny(rateInput){
+  // if input > 1 treated as "rub per 1 cny"
+  // if input <= 1 treated as "cny per 1 rub" => convert: rubPerCny = 1 / input
+  const v = cleanNum(rateInput);
+  if (!isFinite(v) || v === 0) return NaN;
+  if (Math.abs(v) > 1) return v; // rub per cny
+  return 1 / v; // convert cny-per-rub -> rub-per-cny
+}
+
+/* ====== Core calculate function ====== */
+function computeAll(){
+  // parse rates
+  const myRateIn = cleanNum(myRateEl.value);
+  const clientRateIn = cleanNum(clientRateEl.value);
+  const myRate = toRubPerCny(myRateIn);
+  const clientRate = toRubPerCny(clientRateIn);
+
+  // amount interpretation depends on direction:
+  // if rub2cny: amount input = rubles client gives
+  // if cny2rub: amount input = yuans client gives
+  let amountRaw = cleanNum(amountEl.value);
+
+  // invalid rates -> clear
+  if (!isFinite(myRate) || !isFinite(clientRate) || myRate<=0 || clientRate<=0){
+    // show placeholders
+    setDisplay('clientGet','—');
+    setDisplay('clientGive','—');
+    profitRubEl.textContent = '—';
+    profitCnyEl.textContent = '—';
+    detailLine.textContent = 'Введите корректные курсы';
+    return;
+  }
+
+  // Based on lastEdited we might compute amount from clientGet or clientGive
+  if (lastEdited === 'clientGet'){
+    // user edited clientGet: compute amount needed
+    const cg = cleanNum(clientGetEl.textContent);
+    if (!isFinite(cg)){ /*invalid*/ }
+    else {
+      if (direction === 'rub2cny'){
+        // clientGet is cny -> client must give rub = clientGet * clientRate
+        amountRaw = cg * clientRate;
+        amountEl.value = fmt(amountRaw,0);
+      } else {
+        // cny2rub: clientGet is rub -> amount (cny) = clientGet / clientRate
+        amountRaw = cg / clientRate;
+        amountEl.value = fmt(amountRaw,2);
+      }
     }
-
-    function parseNumber(val) {
-        return parseFloat(val.replace(",", "."));
+  } else if (lastEdited === 'clientGive'){
+    // user edited clientGive: set amount directly
+    const cg = cleanNum(clientGiveEl.textContent);
+    if (isFinite(cg)){
+      if (direction === 'rub2cny'){
+        amountRaw = cg; // given rub
+        amountEl.value = fmt(amountRaw,0);
+      } else {
+        amountRaw = cg; // given cny
+        amountEl.value = fmt(amountRaw,2);
+      }
     }
+  } else {
+    // lastEdited is amount or other -> amountRaw already
+  }
 
-    function normalizeRate(rate) {
-        // Если курс < 1, значит это юани за 1 рубль, переводим в рубли за 1 юань
-        return rate < 1 ? 1 / rate : rate;
-    }
+  // Now compute general outputs
+  if (direction === 'rub2cny'){
+    const amountRub = amountRaw;
+    if (!isFinite(amountRub)){ setDisplay('clientGet','—'); setDisplay('clientGive','—'); return; }
+    const clientGetsCny = amountRub / clientRate;
+    const myCnyBought = amountRub / myRate;
+    const profitCny = myCnyBought - clientGetsCny;
+    const profitRub = profitCny * myRate;
 
-    function calculate() {
-        const choice = document.getElementById("choice").value;
-        const reverseMode = document.getElementById("reverseMode").checked;
-        const myRateInput = parseNumber(document.getElementById("yourRate").value);
-        const clientRateInput = parseNumber(document.getElementById("clientRate").value);
-        const amount = parseNumber(document.getElementById("amount").value);
+    // Update displays
+    setDisplay('clientGet', fmt(clientGetsCny,2) + ' 元');
+    setDisplay('clientGive', fmt(amountRub,0) + ' ₽'); // clientGive is amount
+    profitRubEl.textContent = fmt(profitRub,2) + ' ₽';
+    profitCnyEl.textContent = fmt(profitCny,2) + ' 元';
+    detailLine.textContent = L[currentLang].detailsRub + ` (${fmt(amountRub,0)} ₽ → ${fmt(myCnyBought,2)} 元 по вашему курсу → отдано ${fmt(clientGetsCny,2)} 元)`;
 
-        if (isNaN(myRateInput) || isNaN(clientRateInput) || isNaN(amount)) {
-            alert("Введите корректные значения");
-            return;
-        }
+  } else {
+    // cny2rub: client gives cny
+    const amountCny = amountRaw;
+    if (!isFinite(amountCny)){ setDisplay('clientGet','—'); setDisplay('clientGive','—'); return; }
+    const clientGetsRub = amountCny * clientRate;
+    const myRub = amountCny * myRate;
+    const profitRub = myRub - clientGetsRub;
+    const profitCny = profitRub / myRate;
 
-        // Нормализуем курсы в формат "рублей за 1 юань"
-        const myRate = normalizeRate(myRateInput);
-        const clientRate = normalizeRate(clientRateInput);
+    setDisplay('clientGet', fmt(clientGetsRub,2) + ' ₽');
+    setDisplay('clientGive', fmt(amountCny,2) + ' 元');
+    profitRubEl.textContent = fmt(profitRub,2) + ' ₽';
+    profitCnyEl.textContent = fmt(profitCny,2) + ' 元';
+    detailLine.textContent = L[currentLang].detailsCny + ` (${fmt(amountCny,2)} 元 → ${fmt(myRub,2)} ₽ по вашему курсу → клиенту ${fmt(clientGetsRub,2)} ₽)`;
+  }
+}
 
-        let clientGets, clientGives, rubProfit, cnyProfit;
+/* ====== Safe setter with animation for editable text nodes ====== */
+function setDisplay(id, text){
+  const node = (id === 'clientGet') ? clientGetEl : (id === 'clientGive') ? clientGiveEl : null;
+  if (!node){
+    // other fields just set
+    if (id === 'profitRub') profitRubEl.textContent = text;
+    return;
+  }
+  // avoid interfering if user is actively editing this element
+  const active = document.activeElement === node;
+  if (active) {
+    // if user typing, don't clobber; but still update if programmatic change desired
+    return;
+  }
+  // animate: fade out -> change -> fade in
+  node.style.transition = 'transform .18s, opacity .18s';
+  node.style.opacity = 0.0;
+  node.style.transform = 'translateY(6px)';
+  clearTimeout(animTimer);
+  animTimer = setTimeout(()=>{
+    node.textContent = text;
+    node.style.opacity = 1;
+    node.style.transform = 'translateY(0)';
+  },160);
+}
 
-        if (choice === "1") {
-            if (reverseMode) {
-                // Клиент хочет получить определённое количество юаней
-                const cny_received = amount;
-                const rub_to_take = cny_received * clientRate;
-                const my_cny = rub_to_take / myRate;
-                cnyProfit = my_cny - cny_received;
-                rubProfit = cnyProfit * myRate;
-                clientGets = `${cny_received.toFixed(2)} ${langData[currentLang].cny}`;
-                clientGives = `${rub_to_take.toFixed(2)} ${langData[currentLang].rub}`;
-            } else {
-                // Стандартный режим - клиент отдаёт рубли
-                const cny_received = amount / clientRate;
-                const my_cny = amount / myRate;
-                cnyProfit = my_cny - cny_received;
-                rubProfit = cnyProfit * myRate;
-                clientGets = `${cny_received.toFixed(2)} ${langData[currentLang].cny}`;
-                clientGives = `${amount.toFixed(2)} ${langData[currentLang].rub}`;
-            }
-        } else {
-            if (reverseMode) {
-                // Клиент хочет получить определённое количество рублей
-                const rub_received = amount;
-                const cny_to_take = rub_received / clientRate;
-                const my_rub = cny_to_take * myRate;
-                rubProfit = my_rub - rub_received;
-                cnyProfit = rubProfit / myRate;
-                clientGets = `${rub_received.toFixed(2)} ${langData[currentLang].rub}`;
-                clientGives = `${cny_to_take.toFixed(2)} ${langData[currentLang].cny}`;
-            } else {
-                // Стандартный режим - клиент отдаёт юани
-                const my_rub = amount * myRate;
-                const client_rub = amount * clientRate;
-                rubProfit = my_rub - client_rub;
-                cnyProfit = rubProfit / myRate;
-                clientGets = `${client_rub.toFixed(2)} ${langData[currentLang].rub}`;
-                clientGives = `${amount.toFixed(2)} ${langData[currentLang].cny}`;
-            }
-        }
+/* ====== Event wiring with small debounce ====== */
+function scheduleRecalc(source){
+  lastEdited = source;
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(()=>{ computeAll(); lastEdited = null; }, 120);
+}
 
-        document.getElementById("result").style.display = "block";
-        document.getElementById("result").innerHTML = `
-            <strong>${langData[currentLang].result}</strong><br>
-            ${reverseMode ? langData[currentLang].clientGives : langData[currentLang].clientGets}: ${clientGets}<br>
-            ${!reverseMode ? langData[currentLang].clientGives : langData[currentLang].clientGets}: ${clientGives}<br>
-            ${langData[currentLang].yourProfit}: ${rubProfit.toFixed(2)} ${langData[currentLang].rub}<br>
-            ${langData[currentLang].yourProfit}: ${cnyProfit.toFixed(2)} ${langData[currentLang].cny}
-        `;
-    }
+/* inputs */
+myRateEl.addEventListener('input', ()=> scheduleRecalc('myRate'));
+clientRateEl.addEventListener('input', ()=> scheduleRecalc('clientRate'));
 
-    // Инициализация языка при загрузке
-    window.onload = function() {
-        setLanguage('ru');
-        document.getElementById('calculateBtn').onclick = calculate;
-    };
+/* amount input */
+amountEl.addEventListener('input', ()=> scheduleRecalc('amount'));
+amountEl.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') scheduleRecalc('amount'); });
+
+/* editable results: detect editing and commit */
+function sanitizeEditableText(s){
+  // remove letters, keep digits, dot, comma, spaces
+  return s.replace(/[^\d,.\-\s]/g,'').trim();
+}
+
+clientGetEl.addEventListener('input', (e)=>{
+  // sanitize quickly
+  clientGetEl.textContent = sanitizeEditableText(clientGetEl.textContent);
+  scheduleRecalc('clientGet');
+});
+clientGiveEl.addEventListener('input', (e)=>{
+  clientGiveEl.textContent = sanitizeEditableText(clientGiveEl.textContent);
+  scheduleRecalc('clientGive');
+});
+
+/* When user focuses an editable field, mark lastEdited so we won't clobber it */
+[clientGetEl, clientGiveEl, amountEl, myRateEl, clientRateEl].forEach(node=>{
+  node.addEventListener('focus', ()=> lastEdited = node.id === 'amount' ? 'amount' : (node === clientGetEl ? 'clientGet' : (node === clientGiveEl ? 'clientGive' : (node === myRateEl ? 'myRate' : 'clientRate'))));
+});
+
+/* clicking outside will recalc */
+document.addEventListener('click', (e)=>{
+  if (!e.target.closest('.value')) {
+    // when user clicks away, ensure clean numbers format
+    // normalize editable fields
+    // update UI formatting
+    finalizeEditable(clientGetEl);
+    finalizeEditable(clientGiveEl);
+  }
+});
+
+/* finalize: format editable number nicely */
+function finalizeEditable(node){
+  const raw = sanitizeEditableText(node.textContent);
+  const n = cleanNum(raw);
+  if (!isFinite(n)){ node.textContent = '—'; return; }
+  // decide decimals: if direction rub2cny and node is clientGet -> cny (2 decimals)
+  if (node === clientGetEl){
+    if (direction === 'rub2cny') node.textContent = fmt(n,2) + ' 元';
+    else node.textContent = fmt(n,2) + ' ₽';
+  } else if (node === clientGiveEl){
+    if (direction === 'rub2cny') node.textContent = fmt(n,0) + ' ₽';
+    else node.textContent = fmt(n,2) + ' 元';
+  }
+  scheduleRecalc(node === clientGetEl ? 'clientGet' : 'clientGive');
+}
+
+/* friendly formatting when blurring amount */
+amountEl.addEventListener('blur', ()=>{
+  const n = cleanNum(amountEl.value);
+  if (direction === 'rub2cny'){
+    if (isFinite(n)) amountEl.value = fmt(n,0);
+  } else {
+    if (isFinite(n)) amountEl.value = fmt(n,2);
+  }
+  scheduleRecalc('amount');
+});
+
+/* initialize sample values */
+myRateEl.value = '11.3';
+clientRateEl.value = '11.8';
+amountEl.value = '500000';
+computeAll();
+
+/* keyboard support: Enter in editable finalizes */
+[clientGetEl, clientGiveEl].forEach(node=>{
+  node.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter'){ e.preventDefault(); node.blur(); finalizeEditable(node); }
+  });
+});
+
+/* initial language selection (Chinese text) */
+el('flag-cn').addEventListener('click', ()=> applyLang('cn'));
+
+/* expose for debugging */
+window.__calc = {computeAll, setDirection};
+
+/* ensure right labels on language change */
+function applyLangButton(lang){
+  applyLang(lang);
+}
 </script>
-
 </body>
 </html>
