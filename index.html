@@ -2,59 +2,56 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Калькулятор обмена</title>
 <style>
     body {
         font-family: 'Segoe UI', sans-serif;
-        background-color: #f5f5f5;
+        background-color: #f4f4f4;
         margin: 0;
         padding: 0;
         display: flex;
         justify-content: center;
-        align-items: center;
-        min-height: 100vh;
     }
     .container {
+        max-width: 800px;
         background: #ffffff;
+        margin: 30px;
         padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 30px rgba(0,0,0,0.1);
-        max-width: 600px;
-        width: 100%;
+        border-radius: 15px;
+        box-shadow: 0 0 25px rgba(0,0,0,0.1);
     }
     h1 {
         text-align: center;
-        font-weight: 600;
         margin-bottom: 20px;
-        color: #2c3e50;
     }
-    .row {
+    .top-row {
         display: flex;
         justify-content: space-between;
-        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
         margin-bottom: 15px;
     }
-    .row input, .row select {
-        flex: 1;
-        padding: 10px;
+    select, input {
+        padding: 8px;
         font-size: 16px;
         border: 1px solid #ccc;
         border-radius: 8px;
-        text-align: center;
+        width: 100%;
+        box-sizing: border-box;
     }
-    .row label {
+    .row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    .row .col {
         flex: 1;
-        text-align: center;
-        font-weight: 500;
-        padding: 10px 0;
-        color: #34495e;
     }
     .results {
         display: flex;
         justify-content: space-between;
-        gap: 10px;
         margin-top: 20px;
+        gap: 15px;
     }
     .result-box {
         flex: 1;
@@ -62,41 +59,56 @@
         padding: 15px;
         border-radius: 8px;
         text-align: center;
-        border: 1px solid #ddd;
     }
-    .result-box input {
-        width: 100%;
-        text-align: center;
-        font-size: 18px;
-        border: none;
-        background: transparent;
-        outline: none;
-    }
-    .message {
+    .footer {
         margin-top: 20px;
-        background: #ecf0f1;
+        background: #f2f2f2;
         padding: 15px;
         border-radius: 8px;
-        font-size: 16px;
-        line-height: 1.5;
-        color: #2c3e50;
+        font-size: 15px;
+        line-height: 1.4;
+    }
+    .lang-switch img {
+        width: 30px;
+        cursor: pointer;
+        margin-left: 8px;
     }
 </style>
 </head>
 <body>
 <div class="container">
     <h1>Калькулятор обмена</h1>
-    <div class="row">
-        <select id="direction">
-            <option value="rub_to_cny">₽ → 元</option>
-            <option value="cny_to_rub">元 → ₽</option>
-        </select>
-        <input type="number" id="myRate" placeholder="Ваш курс">
-        <input type="number" id="clientRate" placeholder="Клиентский курс">
+
+    <div class="top-row">
+        <div>
+            <label>Направление:</label>
+            <select id="direction">
+                <option value="rub-to-cny">Рубли → Юани</option>
+                <option value="cny-to-rub">Юани → Рубли</option>
+            </select>
+        </div>
+        <div class="lang-switch">
+            <img src="https://flagcdn.com/w20/ru.png" alt="Русский" onclick="setLanguage('ru')">
+            <img src="https://flagcdn.com/w20/cn.png" alt="中文" onclick="setLanguage('cn')">
+        </div>
     </div>
+
     <div class="row">
-        <input type="text" id="amount" placeholder="Введите сумму">
+        <div class="col">
+            <label>Ваш курс</label>
+            <input type="text" id="myRate" value="11.3">
+        </div>
+        <div class="col">
+            <label>Курс для клиента</label>
+            <input type="text" id="clientRate" value="11.8">
+        </div>
     </div>
+
+    <div>
+        <label>Сумма обмена</label>
+        <input type="text" id="amount" value="200000">
+    </div>
+
     <div class="results">
         <div class="result-box">
             <label>Клиент отдаст</label>
@@ -107,86 +119,96 @@
             <input type="text" id="clientGets">
         </div>
     </div>
-    <div class="result-box" style="margin-top:15px;">
-        <label>Ваша прибыль</label>
-        <input type="text" id="profit" readonly>
+
+    <div class="results">
+        <div class="result-box">
+            <strong>Прибыль (₽):</strong> <span id="profitRub">0</span>
+        </div>
+        <div class="result-box">
+            <strong>Прибыль (元):</strong> <span id="profitCny">0</span>
+        </div>
     </div>
-    <div class="message" id="message"></div>
+
+    <div class="footer" id="footerText">
+        Здравствуйте, сегодняшний курс: 11.8.<br>
+        Сумма обмена: 0.<br>
+        Сумма отправки: 0.<br>
+        Реквизиты: +7(981)807-18-99, Юй Ц.
+    </div>
 </div>
 
 <script>
 function parseNumber(val) {
-    if (!val) return 0;
-    return parseFloat(val.toString().replace(',', '.').replace(/\s+/g, '')) || 0;
+    return parseFloat(val.replace(/\s+/g, '').replace(',', '.')) || 0;
 }
 
-function updateCalculator(changedField = null) {
-    let direction = document.getElementById('direction').value;
+function formatNumber(num) {
+    return num.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+function calculate(fromFieldChanged = false) {
     let myRate = parseNumber(document.getElementById('myRate').value);
     let clientRate = parseNumber(document.getElementById('clientRate').value);
     let amount = parseNumber(document.getElementById('amount').value);
-    let clientGives = parseNumber(document.getElementById('clientGives').value);
-    let clientGets = parseNumber(document.getElementById('clientGets').value);
+    let direction = document.getElementById('direction').value;
 
-    if (myRate > 0 && myRate < 1) myRate = 1 / myRate;
-    if (clientRate > 0 && clientRate < 1) clientRate = 1 / clientRate;
+    let clientGivesField = document.getElementById('clientGives');
+    let clientGetsField = document.getElementById('clientGets');
 
-    if (changedField === 'clientGets') {
-        if (direction === 'rub_to_cny') {
-            clientGets = parseNumber(document.getElementById('clientGets').value);
-            clientGives = clientGets * clientRate;
-            amount = clientGives;
+    let clientGives, clientGets;
+
+    if (fromFieldChanged === 'clientGives') {
+        if (direction === 'rub-to-cny') {
+            amount = parseNumber(clientGivesField.value);
         } else {
-            clientGets = parseNumber(document.getElementById('clientGets').value);
-            clientGives = clientGets * myRate;
-            amount = clientGets;
+            amount = parseNumber(clientGivesField.value);
         }
-    } else if (changedField === 'clientGives') {
-        if (direction === 'rub_to_cny') {
-            clientGives = parseNumber(document.getElementById('clientGives').value);
-            clientGets = clientGives / clientRate;
-            amount = clientGives;
+    } else if (fromFieldChanged === 'clientGets') {
+        if (direction === 'rub-to-cny') {
+            amount = parseNumber(clientGetsField.value) * myRate;
         } else {
-            clientGives = parseNumber(document.getElementById('clientGives').value);
-            clientGets = clientGives / myRate;
-            amount = clientGets;
-        }
-    } else {
-        if (direction === 'rub_to_cny') {
-            clientGives = amount;
-            clientGets = clientGives / clientRate;
-        } else {
-            clientGives = amount;
-            clientGets = clientGives / myRate;
+            amount = parseNumber(clientGetsField.value) / myRate;
         }
     }
 
-    let profit = 0;
-    if (direction === 'rub_to_cny') {
-        profit = (clientGets * clientRate) - (clientGets * myRate);
+    if (direction === 'rub-to-cny') {
+        clientGives = amount;
+        clientGets = amount / clientRate;
+        let profitRub = clientGives - clientGets * myRate;
+        document.getElementById('profitRub').textContent = formatNumber(profitRub);
+        document.getElementById('profitCny').textContent = formatNumber(profitRub / myRate);
+        document.getElementById('footerText').innerHTML = 
+            `Здравствуйте, сегодняшний курс: ${clientRate}.<br>` +
+            `Сумма обмена: ${formatNumber(clientGets)} юаней.<br>` +
+            `Сумма отправки: ${formatNumber(clientGives)} рублей.<br>` +
+            `Реквизиты: +7(981)807-18-99, Юй Ц.`;
     } else {
-        profit = (clientGets * myRate) - (clientGets * clientRate);
+        clientGives = amount;
+        clientGets = amount * clientRate;
+        let profitCny = clientGives - clientGets / myRate;
+        document.getElementById('profitRub').textContent = formatNumber(profitCny * myRate);
+        document.getElementById('profitCny').textContent = formatNumber(profitCny);
+        document.getElementById('footerText').innerHTML = 
+            `Здравствуйте, сегодняшний курс: ${clientRate}.<br>` +
+            `Сумма обмена: ${formatNumber(clientGets)} рублей.<br>` +
+            `Сумма отправки: ${formatNumber(clientGives)} юаней.`;
     }
 
-    document.getElementById('amount').value = amount ? amount.toLocaleString('ru-RU') : '';
-    document.getElementById('clientGives').value = clientGives ? clientGives.toLocaleString('ru-RU') : '';
-    document.getElementById('clientGets').value = clientGets ? clientGets.toLocaleString('ru-RU') : '';
-    document.getElementById('profit').value = profit.toFixed(2).toLocaleString('ru-RU');
-
-    let msg = "";
-    if (direction === 'rub_to_cny') {
-        msg = `Здравствуйте, сегодняшний курс: ${clientRate}. Вы обмениваете ${clientGets.toLocaleString('ru-RU')} юаней, вам нужно отдать ${clientGives.toLocaleString('ru-RU')} рублей, пожалуйста, скиньте по реквизитам +79818071899, Юй Ц.`;
-    } else {
-        msg = `Здравствуйте, сегодняшний курс: ${clientRate}. Вы обмениваете ${clientGets.toLocaleString('ru-RU')} рублей, вам нужно отдать ${clientGives.toLocaleString('ru-RU')} рублей.`;
-    }
-    document.getElementById('message').textContent = msg;
+    clientGivesField.value = formatNumber(clientGives);
+    clientGetsField.value = formatNumber(clientGets);
 }
 
-['myRate', 'clientRate', 'amount', 'direction'].forEach(id => {
-    document.getElementById(id).addEventListener('input', () => updateCalculator());
+document.querySelectorAll('#myRate, #clientRate, #amount, #direction').forEach(el => {
+    el.addEventListener('input', () => calculate());
 });
-document.getElementById('clientGets').addEventListener('input', () => updateCalculator('clientGets'));
-document.getElementById('clientGives').addEventListener('input', () => updateCalculator('clientGives'));
+document.getElementById('clientGives').addEventListener('input', () => calculate('clientGives'));
+document.getElementById('clientGets').addEventListener('input', () => calculate('clientGets'));
+
+function setLanguage(lang) {
+    alert(lang === 'ru' ? 'Русский язык' : '中文');
+}
+
+calculate();
 </script>
 </body>
 </html>
