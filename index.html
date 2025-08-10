@@ -58,6 +58,38 @@
   .hint{font-size:12px;color:#8b8f94}
   .footer{margin-top:14px;font-size:12px;color:var(--muted);text-align:center;display:none}
 
+  /* Новые стили для input полей */
+  .input-wrapper {
+    position: relative;
+    width: 100%;
+  }
+  .input-wrapper input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #e6e2dc;
+    background: transparent;
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+    text-align: right;
+  }
+  .input-wrapper input:focus {
+    outline: none;
+    box-shadow: 0 6px 18px rgba(154,111,58,0.08);
+    border-color: rgba(154,111,58,0.18);
+  }
+  .currency-symbol {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+    pointer-events: none;
+  }
+
   /* responsive */
   @media (max-width:860px){
     .wrap{flex-direction:column;align-items:stretch}
@@ -109,13 +141,19 @@
           <!-- слева — Клиент отдаст (editable) -->
           <div>
             <div class="label" id="lab-client-give-label">Клиент отдаст</div>
-            <div tabindex="0" contenteditable="true" id="clientGive" class="value editable" role="textbox" aria-label="Клиент отдаст">—</div>
+            <div class="input-wrapper">
+              <input type="text" id="clientGive" inputmode="decimal" />
+              <span class="currency-symbol" id="giveCurrency">₽</span>
+            </div>
           </div>
 
           <!-- справа — Клиент получит (editable) -->
           <div style="text-align:right">
             <div class="label" id="lab-client-get">Клиент получит</div>
-            <div tabindex="0" contenteditable="true" id="clientGet" class="value editable" role="textbox" aria-label="Клиент получит">—</div>
+            <div class="input-wrapper">
+              <input type="text" id="clientGet" inputmode="decimal" />
+              <span class="currency-symbol" id="getCurrency">元</span>
+            </div>
           </div>
         </div>
 
@@ -176,13 +214,14 @@ const labYourRate = el('lbl-your-rate');
 const labClientRate = el('lbl-client-rate');
 const labProfitRub = el('lab-profit-rub');
 const labProfitCny = el('lab-profit-cny');
+const giveCurrencyEl = el('giveCurrency');
+const getCurrencyEl = el('getCurrency');
 
 /* ====== Состояние ====== */
 let direction = 'rub2cny';
 let currentLang = 'ru';
 let lastEdited = null; // 'clientGet' | 'clientGive' | 'myRate' | 'clientRate'
 let debounceTimer = null;
-let animTimer = null;
 
 /* ====== Локализация (минимальная) ====== */
 const L = {
@@ -234,6 +273,16 @@ function setDirection(dir){
   dirCnyBtn.classList.toggle('active', dir==='cny2rub');
   dirRubBtn.setAttribute('aria-pressed', dir==='rub2cny');
   dirCnyBtn.setAttribute('aria-pressed', dir==='cny2rub');
+  
+  // Обновляем символы валют в зависимости от направления
+  if (dir === 'rub2cny') {
+    giveCurrencyEl.textContent = '₽';
+    getCurrencyEl.textContent = '元';
+  } else {
+    giveCurrencyEl.textContent = '元';
+    getCurrencyEl.textContent = '₽';
+  }
+  
   scheduleRecalc('direction');
 }
 dirRubBtn.addEventListener('click', ()=> setDirection('rub2cny'));
@@ -256,17 +305,17 @@ function computeAll(){
 
   // проверка курсов
   if (!isFinite(myRate) || !isFinite(clientRate) || myRate <= 0 || clientRate <= 0){
-    setDisplay('clientGet','—');
-    setDisplay('clientGive','—');
+    clientGetEl.value = '';
+    clientGiveEl.value = '';
     profitRubEl.textContent = '—';
     profitCnyEl.textContent = '—';
     detailLine.textContent = currentLang === 'ru' ? 'Введите корректные курсы' : '请输入正确的汇率';
     return;
   }
 
-  // получаем текущее значения из редактируемых полей
-  const rawGive = cleanNum(clientGiveEl.textContent);
-  const rawGet  = cleanNum(clientGetEl.textContent);
+  // получаем текущее значения из полей ввода
+  const rawGive = cleanNum(clientGiveEl.value);
+  const rawGet  = cleanNum(clientGetEl.value);
 
   let amountRub = NaN; // сумма в рублях (если применимо)
   let amountCny = NaN; // сумма в юанях (если применимо)
@@ -307,8 +356,8 @@ function computeAll(){
 
   // если не получилось вычислить суммы — очистим поля
   if (!isFinite(amountRub) || !isFinite(amountCny)){
-    setDisplay('clientGive','—');
-    setDisplay('clientGet','—');
+    if (lastEdited !== 'clientGive') clientGiveEl.value = '';
+    if (lastEdited !== 'clientGet') clientGetEl.value = '';
     profitRubEl.textContent = '—';
     profitCnyEl.textContent = '—';
     detailLine.textContent = currentLang === 'ru' ? 'Введите корректные значения' : '请输入正确的值';
@@ -329,11 +378,11 @@ function computeAll(){
 
   // отображаем обновлённые значения
   if (direction === 'rub2cny'){
-    setDisplay('clientGive', fmt(amountRub,0) + ' ₽');
-    setDisplay('clientGet', fmt(amountCny,2) + ' 元');
+    if (lastEdited !== 'clientGive') clientGiveEl.value = fmt(amountRub,0);
+    if (lastEdited !== 'clientGet') clientGetEl.value = fmt(amountCny,2);
   } else {
-    setDisplay('clientGive', fmt(amountCny,2) + ' 元');
-    setDisplay('clientGet', fmt(amountRub,2) + ' ₽');
+    if (lastEdited !== 'clientGive') clientGiveEl.value = fmt(amountCny,2);
+    if (lastEdited !== 'clientGet') clientGetEl.value = fmt(amountRub,2);
   }
 
   profitRubEl.textContent = fmt(profitRub,2) + ' ₽';
@@ -364,23 +413,6 @@ function computeAll(){
   }
 }
 
-/* ====== Безопасное обновление contenteditable с анимацией ====== */
-function setDisplay(id, text){
-  const node = (id === 'clientGet') ? clientGetEl : (id === 'clientGive') ? clientGiveEl : null;
-  if (!node) return;
-  const active = document.activeElement === node;
-  if (active) return; // если пользователь редактирует — не вмешиваемся
-  node.style.transition = 'transform .18s, opacity .18s';
-  node.style.opacity = 0;
-  node.style.transform = 'translateY(6px)';
-  clearTimeout(animTimer);
-  animTimer = setTimeout(()=>{
-    node.textContent = text;
-    node.style.opacity = 1;
-    node.style.transform = 'translateY(0)';
-  },160);
-}
-
 /* ====== Debounce ====== */
 function scheduleRecalc(source){
   lastEdited = source;
@@ -392,21 +424,21 @@ function scheduleRecalc(source){
 myRateEl.addEventListener('input', ()=> scheduleRecalc('myRate'));
 clientRateEl.addEventListener('input', ()=> scheduleRecalc('clientRate'));
 
-/* editable fields: sanitize and schedule */
-function sanitizeEditableText(s){
-  return s.replace(/[^\d,.\-\s]/g,'').trim();
-}
-clientGiveEl.addEventListener('input', ()=>{
-  // Показываем вводимый текст без анимации
-  clientGiveEl.textContent = sanitizeEditableText(clientGiveEl.textContent);
+// Обработчики для новых полей ввода
+clientGiveEl.addEventListener('input', ()=> {
+  // Форматируем ввод в реальном времени
+  const value = clientGiveEl.value.replace(/[^\d,.]/g, '');
+  clientGiveEl.value = value;
   scheduleRecalc('clientGive');
 });
-clientGetEl.addEventListener('input', ()=>{
-  clientGetEl.textContent = sanitizeEditableText(clientGetEl.textContent);
+
+clientGetEl.addEventListener('input', ()=> {
+  const value = clientGetEl.value.replace(/[^\d,.]/g, '');
+  clientGetEl.value = value;
   scheduleRecalc('clientGet');
 });
 
-/* focus handling */
+// Обработчики фокуса
 [clientGetEl, clientGiveEl, myRateEl, clientRateEl].forEach(node=>{
   node.addEventListener('focus', ()=>{
     if (node === clientGetEl) lastEdited = 'clientGet';
@@ -416,44 +448,17 @@ clientGetEl.addEventListener('input', ()=>{
   });
 });
 
-/* click outside — финализируем */
-document.addEventListener('click', (e)=>{
-  if (!e.target.closest('.value')) {
-    finalizeEditable(clientGetEl);
-    finalizeEditable(clientGiveEl);
-  }
-});
-
-/* finalize formatting */
-function finalizeEditable(node){
-  const raw = sanitizeEditableText(node.textContent);
-  const n = cleanNum(raw);
-  if (!isFinite(n)){ node.textContent = '—'; return; }
-  if (node === clientGetEl){
-    if (direction === 'rub2cny') node.textContent = fmt(n,2) + ' 元';
-    else node.textContent = fmt(n,2) + ' ₽';
-  } else if (node === clientGiveEl){
-    if (direction === 'rub2cny') node.textContent = fmt(n,0) + ' ₽';
-    else node.textContent = fmt(n,2) + ' 元';
-  }
-  scheduleRecalc(node === clientGetEl ? 'clientGet' : 'clientGive');
-}
-
-/* Enter in editable finalizes */
-[clientGetEl, clientGiveEl].forEach(node=>{
-  node.addEventListener('keydown', (e)=>{
-    if (e.key === 'Enter'){ e.preventDefault(); node.blur(); finalizeEditable(node); }
-  });
-});
-
-/* Инициализация — очищаем все поля */
+// Инициализация - очищаем все поля
 myRateEl.value = '';
 clientRateEl.value = '';
-clientGiveEl.textContent = '—';
-clientGetEl.textContent = '—';
+clientGiveEl.value = '';
+clientGetEl.value = '';
 profitRubEl.textContent = '—';
 profitCnyEl.textContent = '—';
 detailLine.textContent = currentLang === 'ru' ? 'Введите данные для расчета' : '输入数据计算';
+
+// Устанавливаем правильные символы валют при загрузке
+setDirection(direction);
 
 /* expose for debugging */
 window.__calc = {computeAll, setDirection};
