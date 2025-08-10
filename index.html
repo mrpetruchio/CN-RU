@@ -7,7 +7,7 @@
 <style>
     body {
         font-family: "Segoe UI", Arial, sans-serif;
-        background-color: #e9ecef; /* сдержанный фон */
+        background-color: #e9ecef;
         margin: 0;
         padding: 0;
         display: flex;
@@ -64,7 +64,7 @@
         transition: border-color 0.3s, box-shadow 0.3s;
     }
     input:focus, select:focus {
-        border-color: #a27b5c; /* мягкий золотистый акцент */
+        border-color: #a27b5c;
         outline: none;
         box-shadow: 0 0 6px rgba(162, 123, 92, 0.4);
     }
@@ -88,12 +88,24 @@
         font-size: 15px;
         color: #333;
     }
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        margin-top: 15px;
+    }
+    .checkbox-container input {
+        width: auto;
+        margin-right: 10px;
+    }
+    .checkbox-label {
+        margin: 0;
+    }
 </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header" id="title">Калькулятор обмена ЮАНЬ <-> РУБЛЬ</div>
+    <div class="header" id="title">Калькулятор обмена</div>
     
     <div class="language-switch">
         <button class="flag-btn" onclick="setLanguage('ru')">🇷🇺</button>
@@ -106,16 +118,21 @@
         <option value="2">Отдать юани, получить рубли</option>
     </select>
 
-    <label id="yourRateLabel">Введите ваш курс (рублей за 1 юань):</label>
+    <div class="checkbox-container">
+        <input type="checkbox" id="reverseMode">
+        <label class="checkbox-label" id="reverseLabel">Рассчитать от суммы, которую получит клиент</label>
+    </div>
+
+    <label id="yourRateLabel">Ваш курс:</label>
     <input type="text" id="yourRate">
 
-    <label id="clientRateLabel">Введите клиентский курс (рублей за 1 юань):</label>
+    <label id="clientRateLabel">Клиентский курс:</label>
     <input type="text" id="clientRate">
 
     <label id="amountLabel">Введите сумму:</label>
     <input type="text" id="amount">
 
-    <button onclick="calculate()">Рассчитать</button>
+    <button id="calculateBtn">Рассчитать</button>
 
     <div id="result" class="result" style="display:none;"></div>
 </div>
@@ -123,28 +140,38 @@
 <script>
     const langData = {
         ru: {
-            title: "Калькулятор обмена ЮАНЬ <-> РУБЛЬ",
+            title: "Калькулятор обмена",
             question1: "Что хочет обменять клиент?",
             option1: "Отдать рубли, получить юани",
             option2: "Отдать юани, получить рубли",
-            yourRate: "Введите ваш курс (рублей за 1 юань):",
-            clientRate: "Введите клиентский курс (рублей за 1 юань):",
+            reverseLabel: "Рассчитать от суммы, которую получит клиент",
+            yourRate: "Ваш курс:",
+            clientRate: "Клиентский курс:",
             amount: "Введите сумму:",
+            calculateBtn: "Рассчитать",
             result: "Результаты:",
             clientGets: "Клиент получит",
-            yourProfit: "Ваша прибыль"
+            clientGives: "Клиент отдаст",
+            yourProfit: "Ваша прибыль",
+            rub: "₽",
+            cny: "元"
         },
         cn: {
-            title: "人民币 <-> 卢布 兑换计算器",
+            title: "兑换计算器",
             question1: "客户想兑换什么？",
             option1: "用卢布换人民币",
             option2: "用人民币换卢布",
-            yourRate: "请输入你的汇率（1元多少卢布）:",
-            clientRate: "请输入客户汇率（1元多少卢布）:",
+            reverseLabel: "从客户获得的金额计算",
+            yourRate: "您的汇率:",
+            clientRate: "客户汇率:",
             amount: "请输入金额:",
+            calculateBtn: "计算",
             result: "结果:",
             clientGets: "客户得到",
-            yourProfit: "你的利润"
+            clientGives: "客户支付",
+            yourProfit: "你的利润",
+            rub: "₽",
+            cny: "元"
         }
     };
 
@@ -156,50 +183,95 @@
         document.getElementById("question1").textContent = langData[lang].question1;
         document.getElementById("choice").options[0].text = langData[lang].option1;
         document.getElementById("choice").options[1].text = langData[lang].option2;
+        document.getElementById("reverseLabel").textContent = langData[lang].reverseLabel;
         document.getElementById("yourRateLabel").textContent = langData[lang].yourRate;
         document.getElementById("clientRateLabel").textContent = langData[lang].clientRate;
         document.getElementById("amountLabel").textContent = langData[lang].amount;
+        document.getElementById("calculateBtn").textContent = langData[lang].calculateBtn;
     }
 
     function parseNumber(val) {
         return parseFloat(val.replace(",", "."));
     }
 
+    function normalizeRate(rate) {
+        // Если курс < 1, значит это юани за 1 рубль, переводим в рубли за 1 юань
+        return rate < 1 ? 1 / rate : rate;
+    }
+
     function calculate() {
         const choice = document.getElementById("choice").value;
-        const myRate = parseNumber(document.getElementById("yourRate").value);
-        const clientRate = parseNumber(document.getElementById("clientRate").value);
+        const reverseMode = document.getElementById("reverseMode").checked;
+        const myRateInput = parseNumber(document.getElementById("yourRate").value);
+        const clientRateInput = parseNumber(document.getElementById("clientRate").value);
         const amount = parseNumber(document.getElementById("amount").value);
 
-        if (isNaN(myRate) || isNaN(clientRate) || isNaN(amount)) {
+        if (isNaN(myRateInput) || isNaN(clientRateInput) || isNaN(amount)) {
             alert("Введите корректные значения");
             return;
         }
 
-        let clientGets, rubProfit, cnyProfit;
+        // Нормализуем курсы в формат "рублей за 1 юань"
+        const myRate = normalizeRate(myRateInput);
+        const clientRate = normalizeRate(clientRateInput);
+
+        let clientGets, clientGives, rubProfit, cnyProfit;
 
         if (choice === "1") {
-            const cny_received = amount / clientRate;
-            const my_cny = amount / myRate;
-            cnyProfit = my_cny - cny_received;
-            rubProfit = cnyProfit * myRate;
-            clientGets = `${cny_received.toFixed(2)} 元`;
+            if (reverseMode) {
+                // Клиент хочет получить определённое количество юаней
+                const cny_received = amount;
+                const rub_to_take = cny_received * clientRate;
+                const my_cny = rub_to_take / myRate;
+                cnyProfit = my_cny - cny_received;
+                rubProfit = cnyProfit * myRate;
+                clientGets = `${cny_received.toFixed(2)} ${langData[currentLang].cny}`;
+                clientGives = `${rub_to_take.toFixed(2)} ${langData[currentLang].rub}`;
+            } else {
+                // Стандартный режим - клиент отдаёт рубли
+                const cny_received = amount / clientRate;
+                const my_cny = amount / myRate;
+                cnyProfit = my_cny - cny_received;
+                rubProfit = cnyProfit * myRate;
+                clientGets = `${cny_received.toFixed(2)} ${langData[currentLang].cny}`;
+                clientGives = `${amount.toFixed(2)} ${langData[currentLang].rub}`;
+            }
         } else {
-            const my_rub = amount * myRate;
-            const client_rub = amount * clientRate;
-            rubProfit = my_rub - client_rub;
-            cnyProfit = rubProfit / myRate;
-            clientGets = `${client_rub.toFixed(2)} ₽`;
+            if (reverseMode) {
+                // Клиент хочет получить определённое количество рублей
+                const rub_received = amount;
+                const cny_to_take = rub_received / clientRate;
+                const my_rub = cny_to_take * myRate;
+                rubProfit = my_rub - rub_received;
+                cnyProfit = rubProfit / myRate;
+                clientGets = `${rub_received.toFixed(2)} ${langData[currentLang].rub}`;
+                clientGives = `${cny_to_take.toFixed(2)} ${langData[currentLang].cny}`;
+            } else {
+                // Стандартный режим - клиент отдаёт юани
+                const my_rub = amount * myRate;
+                const client_rub = amount * clientRate;
+                rubProfit = my_rub - client_rub;
+                cnyProfit = rubProfit / myRate;
+                clientGets = `${client_rub.toFixed(2)} ${langData[currentLang].rub}`;
+                clientGives = `${amount.toFixed(2)} ${langData[currentLang].cny}`;
+            }
         }
 
         document.getElementById("result").style.display = "block";
         document.getElementById("result").innerHTML = `
             <strong>${langData[currentLang].result}</strong><br>
-            ${langData[currentLang].clientGets}: ${clientGets}<br>
-            ${langData[currentLang].yourProfit}: ${rubProfit.toFixed(2)} ₽<br>
-            ${langData[currentLang].yourProfit}: ${cnyProfit.toFixed(2)} 元
+            ${reverseMode ? langData[currentLang].clientGives : langData[currentLang].clientGets}: ${clientGets}<br>
+            ${!reverseMode ? langData[currentLang].clientGives : langData[currentLang].clientGets}: ${clientGives}<br>
+            ${langData[currentLang].yourProfit}: ${rubProfit.toFixed(2)} ${langData[currentLang].rub}<br>
+            ${langData[currentLang].yourProfit}: ${cnyProfit.toFixed(2)} ${langData[currentLang].cny}
         `;
     }
+
+    // Инициализация языка при загрузке
+    window.onload = function() {
+        setLanguage('ru');
+        document.getElementById('calculateBtn').onclick = calculate;
+    };
 </script>
 
 </body>
