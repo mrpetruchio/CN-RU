@@ -121,11 +121,11 @@
 
         <div class="row" style="border-top:1px dashed #f0ebe6;margin-top:8px;padding-top:12px">
           <div>
-            <div class="label">Ваша прибыль (₽)</div>
+            <div class="label" id="lab-profit-rub">Ваша прибыль (₽)</div>
             <div class="value" id="profitRub">—</div>
           </div>
           <div style="text-align:right">
-            <div class="label">Ваша прибыль (元)</div>
+            <div class="label" id="lab-profit-cny">Ваша прибыль (元)</div>
             <div class="value" id="profitCny">—</div>
           </div>
         </div>
@@ -171,6 +171,11 @@ const flagCn = el('flag-cn');
 const titleEl = el('title');
 const labClientGet = el('lab-client-get');
 const labClientGive = el('lab-client-give-label');
+const labDirection = el('lbl-direction');
+const labYourRate = el('lbl-your-rate');
+const labClientRate = el('lbl-client-rate');
+const labProfitRub = el('lab-profit-rub');
+const labProfitCny = el('lab-profit-cny');
 
 /* ====== Состояние ====== */
 let direction = 'rub2cny';
@@ -184,12 +189,22 @@ const L = {
   ru: {
     title:'Калькулятор обмена',
     clientGet:'Клиент получит',
-    clientGive:'Клиент отдаст'
+    clientGive:'Клиент отдаст',
+    direction: 'Направление',
+    yourRate: 'Ваш курс',
+    clientRate: 'Клиентский курс',
+    profitRub: 'Ваша прибыль (₽)',
+    profitCny: 'Ваша прибыль (元)'
   },
   cn: {
     title:'兑换计算器',
     clientGet:'客户得到',
-    clientGive:'客户给出'
+    clientGive:'客户给出',
+    direction: '方向',
+    yourRate: '您的汇率',
+    clientRate: '客户汇率',
+    profitRub: '您的利润 (₽)',
+    profitCny: '您的利润 (元)'
   }
 };
 
@@ -200,6 +215,11 @@ function applyLang(lang){
   titleEl.textContent = t.title;
   labClientGet.textContent = t.clientGet;
   labClientGive.textContent = t.clientGive;
+  labDirection.textContent = t.direction;
+  labYourRate.textContent = t.yourRate;
+  labClientRate.textContent = t.clientRate;
+  labProfitRub.textContent = t.profitRub;
+  labProfitCny.textContent = t.profitCny;
   flagRu.classList.toggle('active', lang==='ru');
   flagCn.classList.toggle('active', lang==='cn');
 }
@@ -240,7 +260,7 @@ function computeAll(){
     setDisplay('clientGive','—');
     profitRubEl.textContent = '—';
     profitCnyEl.textContent = '—';
-    detailLine.textContent = 'Введите корректные курсы';
+    detailLine.textContent = currentLang === 'ru' ? 'Введите корректные курсы' : '请输入正确的汇率';
     return;
   }
 
@@ -291,7 +311,7 @@ function computeAll(){
     setDisplay('clientGet','—');
     profitRubEl.textContent = '—';
     profitCnyEl.textContent = '—';
-    detailLine.textContent = 'Введите корректные значения';
+    detailLine.textContent = currentLang === 'ru' ? 'Введите корректные значения' : '请输入正确的值';
     return;
   }
 
@@ -323,15 +343,24 @@ function computeAll(){
   const clientRateShown = clientRateEl.value ? escHTML(clientRateEl.value) : fmt(clientRate,2);
   if (direction === 'rub2cny'){
     detailLine.innerHTML =
-      `Здравствуйте, сегодняшний курс: ${clientRateShown}\n` +
-      `Сумма обмена: ${fmt(amountCny,2)} 元.\n` +
-      `Сумма отправки: ${fmt(amountRub,0)} ₽.\n` +
-      `Реквизиты: +7(981)807-18-99, Юй Ц.`;
+      (currentLang === 'ru' ? 
+        `Здравствуйте, сегодняшний курс: ${clientRateShown}\n` +
+        `Сумма обмена: ${fmt(amountCny,2)} 元.\n` +
+        `Сумма отправки: ${fmt(amountRub,0)} ₽.\n` +
+        `Реквизиты: +7(981)807-18-99, Юй Ц.` : 
+        `您好，今天的汇率: ${clientRateShown}\n` +
+        `兑换金额: ${fmt(amountCny,2)} 元.\n` +
+        `发送金额: ${fmt(amountRub,0)} ₽.\n` +
+        `联系方式: +7(981)807-18-99, Yu C.`);
   } else {
     detailLine.innerHTML =
-      `Здравствуйте, сегодняшний курс: ${clientRateShown}\n` +
-      `Сумма обмена: ${fmt(amountRub,2)} ₽.\n` +
-      `Сумма отправки: ${fmt(amountCny,2)} 元.`;
+      (currentLang === 'ru' ? 
+        `Здравствуйте, сегодняшний курс: ${clientRateShown}\n` +
+        `Сумма обмена: ${fmt(amountRub,2)} ₽.\n` +
+        `Сумма отправки: ${fmt(amountCny,2)} 元.` : 
+        `您好，今天的汇率: ${clientRateShown}\n` +
+        `兑换金额: ${fmt(amountRub,2)} ₽.\n` +
+        `发送金额: ${fmt(amountCny,2)} 元.`);
   }
 }
 
@@ -368,6 +397,7 @@ function sanitizeEditableText(s){
   return s.replace(/[^\d,.\-\s]/g,'').trim();
 }
 clientGiveEl.addEventListener('input', ()=>{
+  // Показываем вводимый текст без анимации
   clientGiveEl.textContent = sanitizeEditableText(clientGiveEl.textContent);
   scheduleRecalc('clientGive');
 });
@@ -416,11 +446,14 @@ function finalizeEditable(node){
   });
 });
 
-/* Инициализация — ставим начальные значения и рассчитываем */
-myRateEl.value = '11.2';
-clientRateEl.value = '11.9';
-clientGiveEl.textContent = '200000'; // пример: сразу видно
-computeAll();
+/* Инициализация — очищаем все поля */
+myRateEl.value = '';
+clientRateEl.value = '';
+clientGiveEl.textContent = '—';
+clientGetEl.textContent = '—';
+profitRubEl.textContent = '—';
+profitCnyEl.textContent = '—';
+detailLine.textContent = currentLang === 'ru' ? 'Введите данные для расчета' : '输入数据计算';
 
 /* expose for debugging */
 window.__calc = {computeAll, setDirection};
