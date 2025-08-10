@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор обмена</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #6dd5fa, #2980b9);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            margin: auto;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #27ae60;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #219150;
+        }
+        .result {
+            margin-top: 15px;
+            font-weight: bold;
+            background: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="title">Калькулятор обмена</h1>
+
+        <label for="lang">Выберите язык:</label>
+        <select id="lang">
+            <option value="ru">Русский</option>
+            <option value="cn">中文</option>
+        </select>
+
+        <label for="choice" id="question">Что хочет обменять клиент?</label>
+        <select id="choice">
+            <option value="1" id="opt1">Отдать рубли, получить юани</option>
+            <option value="2" id="opt2">Отдать юани, получить рубли</option>
+        </select>
+
+        <input type="text" id="myRate" placeholder="Ваш курс (₽ за 1 ¥)">
+        <input type="text" id="clientRate" placeholder="Клиентский курс (₽ за 1 ¥)">
+        <input type="text" id="amount" placeholder="Сумма обмена">
+
+        <button onclick="calculate()">Рассчитать</button>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        const langData = {
+            ru: {
+                title: "Калькулятор обмена",
+                question: "Что хочет обменять клиент?",
+                opt1: "Отдать рубли, получить юани",
+                opt2: "Отдать юани, получить рубли",
+                yourRate: "Ваш курс (₽ за 1 ¥)",
+                clientRate: "Клиентский курс (₽ за 1 ¥)",
+                amount: "Сумма обмена",
+                result: "Результаты",
+                clientGets: "Клиент получит",
+                yourProfit: "Твоя прибыль"
+            },
+            cn: {
+                title: "兑换计算器",
+                question: "客户想兑换什么？",
+                opt1: "用卢布换人民币",
+                opt2: "用人民币换卢布",
+                yourRate: "你的汇率（1元多少卢布）",
+                clientRate: "客户汇率（1元多少卢布）",
+                amount: "兑换金额",
+                result: "结果",
+                clientGets: "客户得到",
+                yourProfit: "你的利润"
+            }
+        };
+
+        document.getElementById("lang").addEventListener("change", function() {
+            const l = langData[this.value];
+            document.getElementById("title").innerText = l.title;
+            document.getElementById("question").innerText = l.question;
+            document.getElementById("opt1").innerText = l.opt1;
+            document.getElementById("opt2").innerText = l.opt2;
+            document.getElementById("myRate").placeholder = l.yourRate;
+            document.getElementById("clientRate").placeholder = l.clientRate;
+            document.getElementById("amount").placeholder = l.amount;
+        });
+
+        function parseNum(str) {
+            return parseFloat(str.replace(",", "."));
+        }
+
+        function calculate() {
+            const lang = document.getElementById("lang").value;
+            const l = langData[lang];
+
+            const choice = document.getElementById("choice").value;
+            const myRate = parseNum(document.getElementById("myRate").value);
+            const clientRate = parseNum(document.getElementById("clientRate").value);
+            const amount = parseNum(document.getElementById("amount").value);
+
+            let resultText = `<b>${l.result}:</b><br>`;
+
+            if (choice === "1") {
+                const cnyReceived = amount / clientRate;
+                const myCny = amount / myRate;
+                const cnyProfit = myCny - cnyReceived;
+                const rubProfit = cnyProfit * myRate;
+
+                resultText += `${l.clientGets}: ${cnyReceived.toFixed(2)} ¥<br>`;
+                resultText += `${l.yourProfit}: ${cnyProfit.toFixed(2)} ¥<br>`;
+                resultText += `${l.yourProfit}: ${rubProfit.toFixed(2)} ₽`;
+            } else {
+                const myRub = amount * myRate;
+                const clientRub = amount * clientRate;
+                const rubProfit = myRub - clientRub;
+                const cnyProfit = rubProfit / myRate;
+
+                resultText += `${l.clientGets}: ${clientRub.toFixed(2)} ₽<br>`;
+                resultText += `${l.yourProfit}: ${rubProfit.toFixed(2)} ₽<br>`;
+                resultText += `${l.yourProfit}: ${cnyProfit.toFixed(2)} ¥`;
+            }
+
+            document.getElementById("result").innerHTML = resultText;
+        }
+    </script>
+</body>
+</html>
