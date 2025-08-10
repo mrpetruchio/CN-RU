@@ -139,8 +139,8 @@
         <div class="full">
           <label id="lbl-direction">Направление</label>
           <div class="direction" role="radiogroup" aria-labelledby="lbl-direction">
-            <button class="pill active" id="dir-rub2cny" data-dir="rub2cny" aria-pressed="true">₽ ⇒ 元</button>
-            <button class="pill" id="dir-cny2rub" data-dir="cny2rub" aria-pressed="false">元 ⇒ ₽</button>
+            <button class="pill active" id="dir-rub2cny" data-dir="rub2cny" aria-pressed="true">₽ ⇒ ¥</button>
+            <button class="pill" id="dir-cny2rub" data-dir="cny2rub" aria-pressed="false">¥ ⇒ ₽</button>
           </div>
         </div>
 
@@ -172,7 +172,7 @@
             <div class="label" id="lab-client-get">Клиент получит</div>
             <div class="input-wrapper">
               <input type="text" id="clientGet" inputmode="decimal" />
-              <span class="currency-symbol" id="getCurrency">元</span>
+              <span class="currency-symbol" id="getCurrency">¥</span>
             </div>
           </div>
         </div>
@@ -183,7 +183,7 @@
             <div class="value" id="profitRub">—</div>
           </div>
           <div style="text-align:right">
-            <div class="label" id="lab-profit-cny">Ваша прибыль (元)</div>
+            <div class="label" id="lab-profit-cny">Ваша прибыль (¥)</div>
             <div class="value" id="profitCny">—</div>
           </div>
         </div>
@@ -206,7 +206,7 @@ function cleanNum(s){
 }
 function fmt(n, dec=2, forceDecimals=false){
   if (!isFinite(n)) return '—';
-  // Для направления 元⇒₽ и целых чисел не показываем .00
+  // Для направления ¥⇒₽ и целых чисел не показываем .00
   if (direction === 'cny2rub' && dec === 2 && Number.isInteger(n) && !forceDecimals) {
     return n.toLocaleString(undefined, {maximumFractionDigits: 0});
   }
@@ -260,7 +260,7 @@ const L = {
     yourRate: 'Ваш курс',
     clientRate: 'Клиентский курс',
     profitRub: 'Ваша прибыль (₽)',
-    profitCny: 'Ваша прибыль (元)'
+    profitCny: 'Ваша прибыль (¥)'
   },
   cn: {
     title:'兑换计算器',
@@ -270,7 +270,7 @@ const L = {
     yourRate: '您的汇率',
     clientRate: '客户汇率',
     profitRub: '您的利润 (₽)',
-    profitCny: '您的利润 (元)'
+    profitCny: '您的利润 (¥)'
   }
 };
 
@@ -304,9 +304,9 @@ function setDirection(dir){
   // Обновляем символы валют в зависимости от направления
   if (dir === 'rub2cny') {
     giveCurrencyEl.textContent = '₽';
-    getCurrencyEl.textContent = '元';
+    getCurrencyEl.textContent = '¥';
   } else {
-    giveCurrencyEl.textContent = '元';
+    giveCurrencyEl.textContent = '¥';
     getCurrencyEl.textContent = '₽';
   }
   
@@ -315,7 +315,7 @@ function setDirection(dir){
 dirRubBtn.addEventListener('click', ()=> setDirection('rub2cny'));
 dirCnyBtn.addEventListener('click', ()=> setDirection('cny2rub'));
 
-/* ====== Нормализация курса: приводим к руб/元 ====== */
+/* ====== Нормализация курса: приводим к руб/¥ ====== */
 function toRubPerCny(rateInput){
   const v = cleanNum(rateInput);
   if (!isFinite(v) || v === 0) return NaN;
@@ -413,7 +413,7 @@ function computeAll(){
   }
 
   profitRubEl.textContent = fmt(profitRub,2) + ' ₽';
-  profitCnyEl.textContent = fmt(profitCny,2) + ' 元';
+  profitCnyEl.textContent = fmt(profitCny,2) + ' ¥';
 
   // detailLine (многострочный)
   const clientRateShown = clientRateEl.value ? escHTML(clientRateEl.value) : fmt(clientRate,2);
@@ -421,11 +421,11 @@ function computeAll(){
     detailLine.innerHTML =
       (currentLang === 'ru' ? 
         `Здравствуйте, сегодняшний курс: ${clientRateShown}\n` +
-        `Сумма обмена: ${fmt(amountCny,2)} 元.\n` +
+        `Сумма обмена: ${fmt(amountCny,2)} ¥.\n` +
         `Сумма отправки: ${fmt(amountRub,0)} ₽.\n` +
         `Реквизиты: +7 (981) 807-18-99, Юй Ц.` : 
         `您好，今天的汇率: ${clientRateShown}\n` +
-        `兑换金额: ${fmt(amountCny,2)} 元.\n` +
+        `兑换金额: ${fmt(amountCny,2)} ¥.\n` +
         `发送金额: ${fmt(amountRub,0)} ₽.\n` +
         `联系方式: +7 (981) 807-18-99, Юй Ц.`);
   } else {
@@ -433,10 +433,10 @@ function computeAll(){
       (currentLang === 'ru' ? 
         `Здравствуйте, сегодняшний курс: ${clientRateShown}\n` +
         `Сумма обмена: ${fmt(amountRub,2)} ₽.\n` +
-        `Сумма отправки: ${fmt(amountCny,2)} 元.` : 
+        `Сумма отправки: ${fmt(amountCny,2)} ¥.` : 
         `您好，今天的汇率: ${clientRateShown}\n` +
         `兑换金额: ${fmt(amountRub,2)} ₽.\n` +
-        `发送金额: ${fmt(amountCny,2)} 元.`);
+        `发送金额: ${fmt(amountCny,2)} ¥.`);
   }
 }
 
